@@ -69,7 +69,7 @@ function init() {
   //ground
   var plane_geometry = new THREE.CubeGeometry(10, 10, 10);
   for (var i=0, x=0, z=0; i<81; i++) {
-    plane = new THREE.Mesh(plane_geometry, new THREE.MeshLambertMaterial( {color: 0xf7f9f8} ));
+    plane = new THREE.Mesh(plane_geometry, new THREE.MeshLambertMaterial( {color: 0x94e557} ));
     plane.position.set(40 - 10*x, 0, 10*z - 40);
     if (plane.position.z > 40) {
       x++;

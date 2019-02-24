@@ -1,10 +1,10 @@
-var camera, controls, scene, renderer, static, container = document.getElementById('container'), raycaster, mouse;
+var camera, controls, scene, renderer, ground, container = document.getElementById('container'), raycaster, mouse;
 var recipes = {
   cube: {
     geometry: new THREE.CubeGeometry(10, 10, 10)
   }
 };
-var INTERSECTED, obj_selected, ground_hovered, interactable;
+var INTERSECTED, obj_selected, interactable;
 container.onmousemove = move;
 container.onclick = click;
 
@@ -16,9 +16,9 @@ function init() {
   var container_height = container.offsetHeight;
 
   scene = new THREE.Scene();
-  static = new THREE.Group();
+  ground = new THREE.Group();
   interactable = new THREE.Group();
-  scene.add(static);
+  scene.add(ground);
   scene.add(interactable);
 
   renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
@@ -68,7 +68,7 @@ function init() {
       z = 0;
       plane.position.set(40 - 10*x, 0, 10*z - 40);
     }
-    static.add(plane);
+    ground.add(plane);
     z++;
   }
 
@@ -86,8 +86,8 @@ function animate() {
     obj_selected.material.emissive.setHex( 0xf4425f );
   }
   else {
-    for (var i=0; i<static.children.length; i++) {
-      static.children[i].material.emissive.setHex(null)
+    for (var i=0; i<ground.children.length; i++) {
+      ground.children[i].material.emissive.setHex(null)
     }
     for (var x=0; x<interactable.children.length; x++) {
       interactable.children[x].material.emissive.setHex(null)
@@ -99,7 +99,7 @@ function animate() {
 function render() {
   raycaster.setFromCamera( mouse, camera );
 
-  if (obj_selected) { intersects = raycaster.intersectObjects(static.children) }
+  if (obj_selected) { intersects = raycaster.intersectObjects(ground.children) }
   else { intersects = raycaster.intersectObjects(interactable.children) }
 
   //https://threejs.org/examples/webgl_interactive_cubes.html
@@ -134,10 +134,26 @@ function click() {
       obj_selected = INTERSECTED
     }
   } else {
-    var destination = INTERSECTED;
-    obj_selected.position.set(INTERSECTED.position.x, INTERSECTED.position.y+10, INTERSECTED.position.z)
+    var d = INTERSECTED;
 
-    obj_selected = null
+    var occupied;
+    for (var i=0; i<interactable.children.length; i++) {
+      if (
+        (d.position.y+10 == interactable.children[i].position.y) &&
+        (d.position.x == interactable.children[i].position.x) &&
+        (d.position.z == interactable.children[i].position.z)
+      ) {
+        occupied = true;
+        break
+      } else {
+        occupied = false;
+      }
+    }
+
+    if (!occupied) {
+      obj_selected.position.set(d.position.x, d.position.y+10, d.position.z)
+      obj_selected = null;
+    }
   }
 }
 

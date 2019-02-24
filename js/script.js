@@ -1,7 +1,13 @@
 var camera, controls, scene, renderer, ground, container = document.getElementById('container'), raycaster, mouse;
-var recipes = {
-  cube: {
-    geometry: new THREE.CubeGeometry(10, 10, 10)
+var object_recipes = {
+  plot: {
+    geometry: new THREE.BoxGeometry(10, 10, 10),
+    color: 0xffffff,
+    topcolor: 0xffb200
+  },
+  seed: {
+    geometry: new THREE.SphereGeometry(5, 4, 2),
+    color: 0x7af442,
   }
 };
 var INTERSECTED, obj_selected, interactable;
@@ -55,13 +61,15 @@ function init() {
   light.right.position.set(1, 0, 0);
   scene.add(light.right);
 
+  //0x2e3044
+
   //isometric
   controls.startingRotation(45 * Math.PI / 180, 25 * Math.PI / 180);
 
   //ground
   var plane_geometry = new THREE.CubeGeometry(10, 10, 10);
   for (var i=0, x=0, z=0; i<81; i++) {
-    plane = new THREE.Mesh(plane_geometry, new THREE.MeshLambertMaterial( {color: 0xa6ef6e} ));
+    plane = new THREE.Mesh(plane_geometry, new THREE.MeshLambertMaterial( {color: 0xf7f9f8} ));
     plane.position.set(40 - 10*x, 0, 10*z - 40);
     if (plane.position.z > 40) {
       x++;
@@ -73,9 +81,10 @@ function init() {
   }
 
   //drawing
-  for (var i=0; i<9; i++) {
-    create('cube', 0, 10, (10*i) + -40);
+  for (var i=0; i<3; i++) {
+    create('plot', 0, 10, (10*i) + -40);
   }
+  create('seed', 0, 10, 0)
 }
 
 function animate() {
@@ -142,15 +151,11 @@ function click() {
         (d.position.y+10 == interactable.children[i].position.y) &&
         (d.position.x == interactable.children[i].position.x) &&
         (d.position.z == interactable.children[i].position.z)
-      ) {
-        occupied = true;
-        break
-      } else {
-        occupied = false;
-      }
+      ) { occupied = true; break }
+      else { occupied = false }
     }
 
-    if (!occupied) {
+    if (!occupied || d == obj_selected) {
       obj_selected.position.set(d.position.x, d.position.y+10, d.position.z)
       obj_selected = null;
     }
@@ -158,8 +163,12 @@ function click() {
 }
 
 function create(object, x, y, z) {
-  var geometry = recipes[object].geometry;
-  var creation = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial( { color: 0xffffff } ));
+  var geometry = object_recipes[object].geometry;
+  var creation = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial( { color: object_recipes[object].color, vertexColors: THREE.FaceColors, wireframe: false} ));
+  if ('topcolor' in object_recipes[object]) {
+    creation.geometry.faces[5].color.setHex( object_recipes[object].topcolor );
+    creation.geometry.faces[4].color.setHex( object_recipes[object].topcolor );
+  }
   creation.position.set(x, y, z);
   interactable.add(creation);
 }

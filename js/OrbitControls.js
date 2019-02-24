@@ -837,7 +837,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 				handleTouchStartDollyPan( event );
 
-				state = STATE.TOUCH_ROTATE;
+				state = STATE.TOUCH_DOLLY_PAN;
 
 				break;
 
@@ -847,7 +847,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 				handleTouchStartRotate( event );
 
-				state = STATE.TOUCH_DOLLY_PAN;
+				state = STATE.TOUCH_DOLLY_ROTATE;
 
 				break;
 

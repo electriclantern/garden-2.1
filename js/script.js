@@ -1,12 +1,10 @@
-var camera, controls, scene, renderer, master, container = document.getElementById('container'), plane, raycaster, mouse;
+var camera, controls, scene, renderer, static, container = document.getElementById('container'), raycaster, mouse;
 var recipes = {
   cube: {
-    geometry: new THREE.CubeGeometry(10, 10, 10),
-    material: new THREE.MeshLambertMaterial( {color: 0xeeeeee})
+    geometry: new THREE.CubeGeometry(10, 10, 10)
   }
 };
-var selectables = [];
-var INTERSECTED, obj_selected;
+var INTERSECTED, obj_selected, ground_hovered, interactable;
 container.onmousemove = move;
 container.onclick = click;
 
@@ -18,11 +16,13 @@ function init() {
   var container_height = container.offsetHeight;
 
   scene = new THREE.Scene();
-  master = new THREE.Group();
-  scene.add(master);
+  static = new THREE.Group();
+  interactable = new THREE.Group();
+  scene.add(static);
+  scene.add(interactable);
 
   renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
-  //TODO: renderer.setPixelRatio(window.devicePixelRatio/3);
+  //TODO: renderer.setPixelRatio(window.devicePixelRatio/1.5);
   renderer.setSize(container_width, container_height);
   container.appendChild(renderer.domElement);
 
@@ -30,7 +30,7 @@ function init() {
   mouse = new THREE.Vector2();
 
   camera = new THREE.PerspectiveCamera(45, container_width / container_height, 1, 1000);
-  camera.position.z = 500;
+  camera.position.z = 250;
 
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.screenSpacePanning = false;
@@ -55,18 +55,27 @@ function init() {
   light.right.position.set(1, 0, 0);
   scene.add(light.right);
 
-  // drawing
-  var plane_geometry = new THREE.CubeGeometry(90, 10, 90);
-  var plane_material = new THREE.MeshLambertMaterial( {color: 0xa6ef6e} );
-  plane = new THREE.Mesh(plane_geometry, plane_material);
-  scene.add(plane);
+  //isometric
+  controls.startingRotation(45 * Math.PI / 180, 25 * Math.PI / 180);
 
+  //ground
+  var plane_geometry = new THREE.CubeGeometry(10, 10, 10);
+  for (var i=0, x=0, z=0; i<81; i++) {
+    plane = new THREE.Mesh(plane_geometry, new THREE.MeshLambertMaterial( {color: 0xa6ef6e} ));
+    plane.position.set(40 - 10*x, 0, 10*z - 40);
+    if (plane.position.z > 40) {
+      x++;
+      z = 0;
+      plane.position.set(40 - 10*x, 0, 10*z - 40);
+    }
+    static.add(plane);
+    z++;
+  }
+
+  //drawing
   for (var i=0; i<9; i++) {
     create('cube', 0, 10, (10*i) + -40);
   }
-
-  //isometric
-  controls.startingRotation(45 * Math.PI / 180, 25 * Math.PI / 180);
 }
 
 function animate() {
@@ -77,8 +86,11 @@ function animate() {
     obj_selected.material.emissive.setHex( 0xf4425f );
   }
   else {
-    for (var i=0; i<master.children.length; i++) {
-      master.children[i].material.emissive.setHex( null )
+    for (var i=0; i<static.children.length; i++) {
+      static.children[i].material.emissive.setHex(null)
+    }
+    for (var x=0; x<interactable.children.length; x++) {
+      interactable.children[x].material.emissive.setHex(null)
     }
   }
 
@@ -87,13 +99,14 @@ function animate() {
 function render() {
   raycaster.setFromCamera( mouse, camera );
 
-  intersects = raycaster.intersectObjects(master.children);
+  if (obj_selected) { intersects = raycaster.intersectObjects(static.children) }
+  else { intersects = raycaster.intersectObjects(interactable.children) }
 
   //https://threejs.org/examples/webgl_interactive_cubes.html
   if (intersects.length > 0) {
     if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
 
-		INTERSECTED = intersects[ 0 ].object;
+		INTERSECTED = intersects[0].object;
 		INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
 		INTERSECTED.material.emissive.setHex( 0xf4425f );
   } else {
@@ -111,21 +124,20 @@ function move(e) {
 
   //https://stackoverflow.com/a/44059588/9375514
   var rect = renderer.domElement.getBoundingClientRect();
-  mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
-  mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
+  mouse.x = ( (event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = - ( (event.clientY - rect.top) / rect.height) * 2 + 1;
 }
 
 function click() {
-  if (obj_selected) {
-    obj_selected = null;
-  }
-  else {
+  if (!obj_selected) {
     if (INTERSECTED != null) {
-      obj_selected = INTERSECTED;
-
-      //create phantom that moves across grid
-
+      obj_selected = INTERSECTED
     }
+  } else {
+    var destination = INTERSECTED;
+    obj_selected.position.set(INTERSECTED.position.x, INTERSECTED.position.y+10, INTERSECTED.position.z)
+
+    obj_selected = null
   }
 }
 
@@ -133,5 +145,5 @@ function create(object, x, y, z) {
   var geometry = recipes[object].geometry;
   var creation = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial( { color: 0xffffff } ));
   creation.position.set(x, y, z);
-  master.add(creation);
+  interactable.add(creation);
 }

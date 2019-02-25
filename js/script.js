@@ -1,4 +1,4 @@
-var camera, controls, scene, renderer, master, container = document.getElementById('container'), raycaster, mouse;
+var camera, controls, scene, renderer, container = document.getElementById('container'), raycaster, mouse;
 var object_recipes = {
   plot: {
     geometry: new THREE.BoxGeometry(10, 10, 10),
@@ -8,9 +8,15 @@ var object_recipes = {
   seed: {
     geometry: new THREE.SphereGeometry(5, 4, 2),
     color: 0x7af442,
+  },
+  potion: {
+    geometry: new THREE.ConeGeometry(5, 10, 3),
+    color: 0xffffff,
+    opacity: 0.5,
   }
 };
-var INTERSECTED, obj_selected, interactable;
+var static, master, INTERSECTED, obj_selected, interactable;
+var tooltip = document.getElementById('tooltip');
 container.onmousemove = move;
 container.onclick = click;
 
@@ -22,10 +28,9 @@ function init() {
   var container_height = container.offsetHeight;
 
   scene = new THREE.Scene();
-  master = new THREE.Group();
-  interactable = new THREE.Group();
-  scene.add(master);
-  master.add(interactable);
+  static = [];
+  interactable = [];
+  master = [];
 
   renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
   //TODO: renderer.setPixelRatio(window.devicePixelRatio/1.5);
@@ -61,12 +66,10 @@ function init() {
   light.right.position.set(1, 0, 0);
   scene.add(light.right);
 
-  //0x2e3044
-
   //isometric
   controls.startingRotation(45 * Math.PI / 180, 25 * Math.PI / 180);
 
-  //master
+  //ground
   var plane_geometry = new THREE.CubeGeometry(10, 10, 10);
   for (var i=0, x=0, z=0; i<81; i++) {
     plane = new THREE.Mesh(plane_geometry, new THREE.MeshLambertMaterial( {color: 0x94e557} ));
@@ -76,9 +79,19 @@ function init() {
       z = 0;
       plane.position.set(40 - 10*x, 0, 10*z - 40);
     }
-    master.add(plane);
+    scene.add(plane);
+    static.push(plane);
+    master.push(plane);
     z++;
   }
+
+  var brewer_geometry = new THREE.CylinderGeometry(5, 5, 10, 6);
+  var brewer = new THREE.Mesh(brewer_geometry, new THREE.MeshLambertMaterial( {color: 0xe85c5c} ));
+  brewer.position.set(10, 10, 10);
+  brewer.name = 'brewer';
+  scene.add(brewer);
+  interactable.push(brewer);
+  master.push(brewer);
 
   //drawing
   for (var i=0; i<3; i++) {
@@ -86,7 +99,6 @@ function init() {
   }
   create('seed', 0, 10, 0)
 }
-
 function animate() {
 	requestAnimationFrame(animate);
   controls.update();
@@ -95,37 +107,43 @@ function animate() {
     obj_selected.material.emissive.setHex( 0xf4425f );
   }
   else {
-    for (var i=0; i<master.children.length; i++) {
-      if ( master.children[i].isMesh ) {
-        master.children[i].material.emissive.setHex(null)
+    for (var i=0; i<master.length; i++) {
+      if ( master[i].isMesh ) {
+        master[i].material.emissive.setHex(null)
       }
-    }
-    for (var x=0; x<interactable.children.length; x++) {
-      interactable.children[x].material.emissive.setHex(null)
     }
   }
 
   render();
 }
 function render() {
-  raycaster.setFromCamera( mouse, camera );
+  raycaster.setFromCamera(mouse, camera);
 
-  if (obj_selected) { intersects = raycaster.intersectObjects(master.children) }
-  else { intersects = raycaster.intersectObjects(interactable.children) }
+  intersects = [];
+  if (obj_selected) {
+    intersects = intersects.concat(raycaster.intersectObjects(master))
+  }
+  else {
+    intersects = intersects.concat(raycaster.intersectObjects(interactable))
+  }
 
   //https://threejs.org/examples/webgl_interactive_cubes.html
-  if (intersects.length > 0) {
+  if (Object.keys(intersects).length > 0) {
     if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
 
-		INTERSECTED = intersects[0].object;
+		INTERSECTED = intersects[Object.keys(intersects)[0]].object;
 		INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
 		INTERSECTED.material.emissive.setHex( 0xf4425f );
+
+    tooltip.textContent = INTERSECTED.name;
   } else {
     if (INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex);
     INTERSECTED = null;
+
+    tooltip.textContent = '';
   }
 
-  renderer.render( scene, camera );
+  renderer.render(scene, camera);
 }
 
 function move(e) {
@@ -136,30 +154,42 @@ function move(e) {
   mouse.x = ( (event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = - ( (event.clientY - rect.top) / rect.height) * 2 + 1;
 }
-
 function click() {
   if (!obj_selected) {
     if (INTERSECTED != null) {
       obj_selected = INTERSECTED
     }
   } else {
-    var d = INTERSECTED;
-
+    var place = INTERSECTED;
+    var occupying_obj;
     var occupied;
-    for (var i=0; i<interactable.children.length; i++) {
+
+    //getting object occupying space above place
+    for (var i=0; i<Object.keys(interactable).length; i++) {
       if (
-        (d.position.y+10 == interactable.children[i].position.y) &&
-        (d.position.x == interactable.children[i].position.x) &&
-        (d.position.z == interactable.children[i].position.z)
-      ) { occupied = true; break }
+        (place.position.y+10 == interactable[Object.keys(interactable)[i]].position.y) &&
+        (place.position.x == interactable[Object.keys(interactable)[i]].position.x) &&
+        (place.position.z == interactable[Object.keys(interactable)[i]].position.z)
+      ) {
+        occupied = true;
+        occupying_obj = interactable[Object.keys(interactable)[i]];
+        break
+      }
       else { occupied = false }
     }
 
+    // if () {} if obj_selected has a relationship with place
+
+    //placement
     if (!occupied) {
-      if (d != obj_selected) {
-        obj_selected.position.set(d.position.x, d.position.y+10, d.position.z)
+      if (place != obj_selected && obj_selected != occupying_obj) {
+        obj_selected.position.set(place.position.x, place.position.y+10, place.position.z)
       }
       obj_selected = null;
+    } else {
+      if (place == obj_selected || obj_selected == occupying_obj) {
+        obj_selected = null;
+      }
     }
   }
 }
@@ -171,6 +201,14 @@ function create(object, x, y, z) {
     creation.geometry.faces[5].color.setHex( object_recipes[object].topcolor );
     creation.geometry.faces[4].color.setHex( object_recipes[object].topcolor );
   }
+  if (object == 'potion') {
+    creation.material.transparent = true;
+    creation.material.opacity = object_recipes[object].opacity;
+    creation.rotation.x = 90 * Math.PI / 2;
+  }
   creation.position.set(x, y, z);
-  interactable.add(creation);
+  creation.name = object;
+  scene.add(creation);
+  interactable.push(creation);
+  master.push(creation);
 }

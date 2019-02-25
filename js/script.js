@@ -7,16 +7,22 @@ var object_recipes = {
   },
   seed: {
     geometry: new THREE.SphereGeometry(5, 4, 2),
-    color: 0x7af442,
+    color: 0x7af442
   },
-  potion: {
+  bottle: {
     geometry: new THREE.ConeGeometry(5, 10, 3),
     color: 0xffffff,
-    opacity: 0.5,
+    opacity: 0.5
+  },
+  sprout: {
+    geometry: new THREE.BoxGeometry(10, 0, 10),
+    color: 0x7af442
   }
 };
+var plantable = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
 var static, master, INTERSECTED, obj_selected, interactable;
 var tooltip = document.getElementById('tooltip');
+var spawner;
 container.onmousemove = move;
 container.onclick = click;
 
@@ -49,11 +55,13 @@ function init() {
   controls.maxPolarAngle = Math.PI / 2;
 
   var light = {
-    top: new THREE.DirectionalLight(0xfff9bf, 1.0),
-    front: new THREE.DirectionalLight(0xfff9bf, 0.8),
-    back: new THREE.DirectionalLight(0xfff9bf, 0.4),
-    left: new THREE.DirectionalLight(0xfff9bf, 0.6),
-    right: new THREE.DirectionalLight(0xfff9bf, 0.6),
+    top: new THREE.DirectionalLight(0xfff9bf, 0.8),
+    front: new THREE.DirectionalLight(0xfff9bf, 0.6),
+    back: new THREE.DirectionalLight(0xfff9bf, 0.2),
+    left: new THREE.DirectionalLight(0xfff9bf, 0.4),
+    right: new THREE.DirectionalLight(0xfff9bf, 0.4),
+    bottom: new THREE.DirectionalLight(0xfff9bf, 0.2),
+    ambient: new THREE.AmbientLight(0xfff9bf, 0.2),
   }
   scene.add(light.top);
   light.front.position.set(0, 0, 1);
@@ -64,6 +72,9 @@ function init() {
   scene.add(light.left);
   light.right.position.set(1, 0, 0);
   scene.add(light.right);
+  scene.add(light.ambient);
+  light.bottom.position.set(0, -1, 0);
+  scene.add(light.bottom);
 
   //isometric
   controls.startingRotation(45 * Math.PI / 180, 25 * Math.PI / 180);
@@ -86,17 +97,34 @@ function init() {
 
   var brewer_geometry = new THREE.CylinderGeometry(5, 5, 10, 6);
   var brewer = new THREE.Mesh(brewer_geometry, new THREE.MeshLambertMaterial( {color: 0xe85c5c} ));
-  brewer.position.set(10, 10, 10);
+  brewer.position.set(40, 10, -10);
   brewer.name = 'brewer';
   scene.add(brewer);
   interactable.push(brewer);
   master.push(brewer);
 
+  var bottle_geometry = object_recipes.bottle.geometry;
+  var bottle_button = new THREE.Mesh(bottle_geometry, new THREE.MeshLambertMaterial( {color: 0xffffff }));
+  bottle_button.position.set(40, -10, 40);
+  bottle_button.name = 'bottle spawner';
+  bottle_button.rotation.x = 90 * Math.PI / 2;
+  scene.add(bottle_button);
+  interactable.push(bottle_button);
+  master.push(bottle_button);
+
+  var spawner_geometry = new THREE.CubeGeometry(10, 3, 10);
+  spawner = new THREE.Mesh(spawner_geometry, new THREE.MeshLambertMaterial( {color: 0xffffff}));
+  spawner.position.set(40, 10, 40);
+  spawner.name = 'spawner/remover';
+  scene.add(spawner);
+  interactable.push(spawner);
+  master.push(spawner);
+
   //drawing
   for (var i=0; i<3; i++) {
     create('plot', 0, 10, (10*i) + -40);
   }
-  create('seed', 0, 10, 0)
+  create('mercury_seed')
 }
 function animate() {
 	requestAnimationFrame(animate);
@@ -157,6 +185,12 @@ function click() {
   if (!obj_selected) {
     if (INTERSECTED != null) {
       obj_selected = INTERSECTED
+
+      if (obj_selected.name.split(' ')[1] == 'spawner') {
+        create(obj_selected.name.split(' ')[0]);
+
+        obj_selected = null;
+      }
     }
   } else {
     var place = INTERSECTED;
@@ -164,20 +198,31 @@ function click() {
     var occupied;
 
     //getting object occupying space above place
-    for (var i=0; i<Object.keys(interactable).length; i++) {
+    for (var i=0; i<Object.keys(master).length; i++) {
       if (
-        (place.position.y+10 == interactable[Object.keys(interactable)[i]].position.y) &&
-        (place.position.x == interactable[Object.keys(interactable)[i]].position.x) &&
-        (place.position.z == interactable[Object.keys(interactable)[i]].position.z)
+        (place.position.y+10 == master[Object.keys(master)[i]].position.y) &&
+        (place.position.x == master[Object.keys(master)[i]].position.x) &&
+        (place.position.z == master[Object.keys(master)[i]].position.z)
       ) {
         occupied = true;
-        occupying_obj = interactable[Object.keys(interactable)[i]];
+        occupying_obj = master[Object.keys(master)[i]];
         break
       }
       else { occupied = false }
     }
 
-    // if () {} if obj_selected has a relationship with place
+    //relationships
+    if (place.name == 'spawner/remover') {
+      if (obj_selected.name == 'bottle') {
+        removeObject(obj_selected);
+      }
+    }
+    if (place.name == 'plot') {
+      if (plantable.includes(obj_selected.name.split(' ')[0]) && obj_selected.name.split(' ')[1] == 'seed') {
+        create(obj_selected.name.split(' ')[0]+'_sprout', place.position.x, place.position.y+10, place.position.z);
+        removeObject(obj_selected);
+      }
+    }
 
     //placement
     if (!occupied && place != obj_selected && obj_selected != occupying_obj) {
@@ -188,20 +233,43 @@ function click() {
 }
 
 function create(object, x, y, z) {
-  var geometry = object_recipes[object].geometry;
-  var creation = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial( { color: object_recipes[object].color, vertexColors: THREE.FaceColors, wireframe: false} ));
-  if ('topcolor' in object_recipes[object]) {
-    creation.geometry.faces[5].color.setHex( object_recipes[object].topcolor );
-    creation.geometry.faces[4].color.setHex( object_recipes[object].topcolor );
+  var x = x || spawner.position.x;
+  var y = y || spawner.position.y+10;
+  var z = z || spawner.position.z;
+  var obj;
+
+  if (object.includes('_')) {
+    obj = object.split('_')[1];
+  } else { obj = object }
+
+  var geometry = object_recipes[obj].geometry;
+  var creation = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial( { color: object_recipes[obj].color, vertexColors: THREE.FaceColors, wireframe: false} ));
+  if ('topcolor' in object_recipes[obj]) {
+    creation.geometry.faces[5].color.setHex( object_recipes[obj].topcolor );
+    creation.geometry.faces[4].color.setHex( object_recipes[obj].topcolor );
   }
-  if (object == 'potion') {
+  if (obj == 'bottle') {
     creation.material.transparent = true;
-    creation.material.opacity = object_recipes[object].opacity;
+    creation.material.opacity = object_recipes[obj].opacity;
     creation.rotation.x = 90 * Math.PI / 2;
   }
   creation.position.set(x, y, z);
-  creation.name = object;
+  creation.name = object.replace('_', ' ');
   scene.add(creation);
   interactable.push(creation);
   master.push(creation);
+}
+function arrayRemove(arr, value) {
+
+   return arr.filter(function(ele){
+       return ele != value;
+   });
+
+}
+function removeObject(obj) {
+  scene.remove(obj);
+
+  if (static.includes(obj)) { static = arrayRemove(static, obj) }
+  if (interactable.includes(obj)) { interactable = arrayRemove(interactable, obj) }
+  if (master.includes(obj)) { master = arrayRemove(master, obj) }
 }

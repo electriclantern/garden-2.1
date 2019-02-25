@@ -119,7 +119,7 @@ function init() {
   var spawner_geometry = new THREE.CubeGeometry(10, 3, 10);
   spawner = new THREE.Mesh(spawner_geometry, new THREE.MeshLambertMaterial( {color: 0xffffff}));
   spawner.position.set(40, 10, 40);
-  spawner.name = 'spawner/remover';
+  spawner.name = 'spawner/disposal';
   scene.add(spawner);
   interactable.push(spawner);
   master.push(spawner);
@@ -234,7 +234,7 @@ function click() {
     }
 
     //relationships
-    if (place.name == 'spawner/remover') {
+    if (place.name == 'spawner/disposal') {
       if (removable.includes(obj_selected.name.split(' ')[1])) {
         removeObject(obj_selected);
       }
@@ -250,8 +250,13 @@ function click() {
       }
     }
 
-    //harvesting seeds
-    if (obj_selected.name.split(' ')[1] == 'ripe' && prev_place != place && place != obj_selected) {
+    //harvesting
+    if (removable.includes(obj_selected.name.split(' ')[1])) {
+      growing_plants = arrayRemove(growing_plants, obj_selected);
+    }
+    //seeds
+    if (obj_selected.name.split(' ')[2] == '+' && prev_place != place && place != obj_selected) {
+      obj_selected.name = arrayRemove(arrayRemove(obj_selected.name.split(' '), '+'), 'seed').toString().replace(',', ' ');
       create(obj_selected.name.split(' ')[0]+'_seed')
     }
 
@@ -331,61 +336,40 @@ function removeObject(obj) {
 }
 function addHeight(mesh, y){
   //https://stackoverflow.com/questions/40933735/three-js-cube-geometry-how-to-update-parameters
-  scaleFactorY = mesh.geometry.parameters.height + y / mesh.geometry.parameters.height;
+  var scaleFactorY = mesh.geometry.parameters.height + y / mesh.geometry.parameters.height;
   mesh.geometry.parameters.height += y;
   mesh.scale.set( 1, scaleFactorY, 1 );
 }
 
 function grow() {
-  //get array of plots
-  for (var i=0, plots=[]; i<interactable.length; i++) {
-    if (interactable[i].name == 'plot') {
-      plots.push(interactable[i])
-    }
-  }
-
   for (var i=0; i<growing_plants.length; i++) {
-    //check if in plot
-    for (var x=0; x<plots.length; x++) {
-      if (
-        growing_plants[i].position.x == plots[x].position.x &&
-        growing_plants[i].position.y-10 == plots[x].position.y &&
-        growing_plants[i].position.z == plots[x].position.z
-      ) {
-        let plant_height = growing_plants[i].geometry.parameters.height;
+    let plant_height = growing_plants[i].geometry.parameters.height;
 
-        if (plant_height <= 10) {
-          addHeight(growing_plants[i], 0.5);
-        }
+    if (plant_height <= 10) {addHeight(growing_plants[i], 0.5)}
 
-        if (plant_height > 10) {
-          growing_plants[i].material.color.setHex(0xb2b2b2);
-          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' decaying'
-        }
-        else if (plant_height > 8) {
-          growing_plants[i].material.color.setHex(0xc08bd6);
-          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' wilting'
-        }
-        else if (plant_height > 4) {
-          growing_plants[i].material.color.setHex(0xd30ad3);
-          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' ripe'
-        }
-        else if (plant_height > 2) {
-          growing_plants[i].material.color.setHex(0xf767d7);
-          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' blooming'
-        }
-        else if (plant_height > 1) {
-          growing_plants[i].material.color.setHex(0x4bc910);
-          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' seedling'
-        }
-        else {
-          growing_plants[i].material.color.setHex(0x7af442);
-          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' sprout'
-        }
-
-        break
-      }
+    if (plant_height > 10) {
+      growing_plants[i].material.color.setHex(0xb2b2b2);
+      growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' decaying'
+    }
+    else if (plant_height > 8) {
+      growing_plants[i].material.color.setHex(0xc08bd6);
+      growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' wilting'
+    }
+    else if (plant_height > 4) {
+      growing_plants[i].material.color.setHex(0xd30ad3);
+      growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' ripe + seed'
+    }
+    else if (plant_height > 2) {
+      growing_plants[i].material.color.setHex(0xf767d7);
+      growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' blooming'
+    }
+    else if (plant_height > 1) {
+      growing_plants[i].material.color.setHex(0x4bc910);
+      growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' seedling'
+    }
+    else {
+      growing_plants[i].material.color.setHex(0x7af442);
+      growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' sprout'
     }
   }
-
 }

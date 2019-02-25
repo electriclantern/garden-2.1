@@ -1,4 +1,4 @@
-var camera, controls, scene, renderer, ground, container = document.getElementById('container'), raycaster, mouse;
+var camera, controls, scene, renderer, master, container = document.getElementById('container'), raycaster, mouse;
 var object_recipes = {
   plot: {
     geometry: new THREE.BoxGeometry(10, 10, 10),
@@ -22,10 +22,10 @@ function init() {
   var container_height = container.offsetHeight;
 
   scene = new THREE.Scene();
-  ground = new THREE.Group();
+  master = new THREE.Group();
   interactable = new THREE.Group();
-  scene.add(ground);
-  scene.add(interactable);
+  scene.add(master);
+  master.add(interactable);
 
   renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
   //TODO: renderer.setPixelRatio(window.devicePixelRatio/1.5);
@@ -66,7 +66,7 @@ function init() {
   //isometric
   controls.startingRotation(45 * Math.PI / 180, 25 * Math.PI / 180);
 
-  //ground
+  //master
   var plane_geometry = new THREE.CubeGeometry(10, 10, 10);
   for (var i=0, x=0, z=0; i<81; i++) {
     plane = new THREE.Mesh(plane_geometry, new THREE.MeshLambertMaterial( {color: 0x94e557} ));
@@ -76,7 +76,7 @@ function init() {
       z = 0;
       plane.position.set(40 - 10*x, 0, 10*z - 40);
     }
-    ground.add(plane);
+    master.add(plane);
     z++;
   }
 
@@ -95,8 +95,10 @@ function animate() {
     obj_selected.material.emissive.setHex( 0xf4425f );
   }
   else {
-    for (var i=0; i<ground.children.length; i++) {
-      ground.children[i].material.emissive.setHex(null)
+    for (var i=0; i<master.children.length; i++) {
+      if ( master.children[i].isMesh ) {
+        master.children[i].material.emissive.setHex(null)
+      }
     }
     for (var x=0; x<interactable.children.length; x++) {
       interactable.children[x].material.emissive.setHex(null)
@@ -108,7 +110,7 @@ function animate() {
 function render() {
   raycaster.setFromCamera( mouse, camera );
 
-  if (obj_selected) { intersects = raycaster.intersectObjects(ground.children) }
+  if (obj_selected) { intersects = raycaster.intersectObjects(master.children) }
   else { intersects = raycaster.intersectObjects(interactable.children) }
 
   //https://threejs.org/examples/webgl_interactive_cubes.html
@@ -125,8 +127,6 @@ function render() {
 
   renderer.render( scene, camera );
 }
-
-//TODO: arrow key pan
 
 function move(e) {
   event.preventDefault();
@@ -155,8 +155,10 @@ function click() {
       else { occupied = false }
     }
 
-    if (!occupied || d == obj_selected) {
-      obj_selected.position.set(d.position.x, d.position.y+10, d.position.z)
+    if (!occupied) {
+      if (d != obj_selected) {
+        obj_selected.position.set(d.position.x, d.position.y+10, d.position.z)
+      }
       obj_selected = null;
     }
   }

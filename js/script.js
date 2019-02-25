@@ -15,12 +15,14 @@ var object_recipes = {
     opacity: 0.5
   },
   sprout: {
-    geometry: new THREE.BoxGeometry(10, 0, 10),
+    geometry: new THREE.BoxGeometry(10, 1, 10),
     color: 0x7af442
   }
 };
 var plantable = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
-var static, master, INTERSECTED, obj_selected, interactable;
+var removable = ['sprout', 'seedling', 'blooming', 'ripe', 'wilting', 'decaying'];
+var growing_plants = [];
+var static, master, INTERSECTED, obj_selected, interactable, prev_place;
 var tooltip = document.getElementById('tooltip');
 var spawner;
 container.onmousemove = move;
@@ -28,6 +30,8 @@ container.onclick = click;
 
 init();
 animate();
+
+var growth_timer = setInterval(grow, 3000);
 
 function init() {
   var container_width = container.offsetWidth;
@@ -184,18 +188,36 @@ function move(e) {
 function click() {
   if (!obj_selected) {
     if (INTERSECTED != null) {
-      obj_selected = INTERSECTED
+      obj_selected = INTERSECTED;
 
       if (obj_selected.name.split(' ')[1] == 'spawner') {
         create(obj_selected.name.split(' ')[0]);
 
         obj_selected = null;
       }
+
+      //harvesting
+      if (growing_plants.includes(obj_selected.name.split(' ')[1])) {
+        growing_plants = arrayRemove(growing_plants, obj_selected)
+      }
+
+      //getting prev place
+      for (var i=0; i<Object.keys(master).length; i++) {
+        if (
+          (obj_selected.position.y-10 == master[Object.keys(master)[i]].position.y) &&
+          (obj_selected.position.x == master[Object.keys(master)[i]].position.x) &&
+          (obj_selected.position.z == master[Object.keys(master)[i]].position.z)
+        ) {
+          prev_place = master[Object.keys(master)[i]];
+          break
+        }
+      }
+
     }
   } else {
     var place = INTERSECTED;
     var occupying_obj;
-    var occupied;
+    var occupied, mesh_above_obj = null;
 
     //getting object occupying space above place
     for (var i=0; i<Object.keys(master).length; i++) {
@@ -213,20 +235,47 @@ function click() {
 
     //relationships
     if (place.name == 'spawner/remover') {
-      if (obj_selected.name == 'bottle') {
+      if (removable.includes(obj_selected.name.split(' ')[1])) {
         removeObject(obj_selected);
       }
     }
-    if (place.name == 'plot') {
+    if (place.name == 'plot') { //no replanting
+      if (removable.includes(obj_selected.name.split(' ')[1])) {
+        occupied = true;
+      }
+      //planting
       if (plantable.includes(obj_selected.name.split(' ')[0]) && obj_selected.name.split(' ')[1] == 'seed') {
         create(obj_selected.name.split(' ')[0]+'_sprout', place.position.x, place.position.y+10, place.position.z);
         removeObject(obj_selected);
       }
     }
 
+    //harvesting seeds
+    if (obj_selected.name.split(' ')[1] == 'ripe' && prev_place != place && place != obj_selected) {
+      create(obj_selected.name.split(' ')[0]+'_seed')
+    }
+
+    if (obj_selected.name == 'plot') {
+      //get mesh above plot
+      //if mesh is plant, then move with it
+      for (var i=0; i<growing_plants.length; i++) {
+        if (
+          growing_plants[i].position.x == obj_selected.position.x &&
+          growing_plants[i].position.y == obj_selected.position.y+10 &&
+          growing_plants[i].position.z == obj_selected.position.z
+) {
+          mesh_above_obj = growing_plants[i]
+        }
+      }
+    }
+
     //placement
     if (!occupied && place != obj_selected && obj_selected != occupying_obj) {
       obj_selected.position.set(place.position.x, place.position.y+10, place.position.z)
+
+      if (mesh_above_obj) {
+        mesh_above_obj.position.set(obj_selected.position.x, obj_selected.position.y+10, obj_selected.position.z)
+      }
     }
     obj_selected = null;
   }
@@ -253,11 +302,17 @@ function create(object, x, y, z) {
     creation.material.opacity = object_recipes[obj].opacity;
     creation.rotation.x = 90 * Math.PI / 2;
   }
+
   creation.position.set(x, y, z);
   creation.name = object.replace('_', ' ');
   scene.add(creation);
   interactable.push(creation);
   master.push(creation);
+
+  //plant
+  if (obj == 'sprout') {
+    growing_plants.push(creation);
+  }
 }
 function arrayRemove(arr, value) {
 
@@ -271,5 +326,66 @@ function removeObject(obj) {
 
   if (static.includes(obj)) { static = arrayRemove(static, obj) }
   if (interactable.includes(obj)) { interactable = arrayRemove(interactable, obj) }
+  if (growing_plants.includes(obj)) { growing_plants = arrayRemove(growing_plants, obj) }
   if (master.includes(obj)) { master = arrayRemove(master, obj) }
+}
+function addHeight(mesh, y){
+  //https://stackoverflow.com/questions/40933735/three-js-cube-geometry-how-to-update-parameters
+  scaleFactorY = mesh.geometry.parameters.height + y / mesh.geometry.parameters.height;
+  mesh.geometry.parameters.height += y;
+  mesh.scale.set( 1, scaleFactorY, 1 );
+}
+
+function grow() {
+  //get array of plots
+  for (var i=0, plots=[]; i<interactable.length; i++) {
+    if (interactable[i].name == 'plot') {
+      plots.push(interactable[i])
+    }
+  }
+
+  for (var i=0; i<growing_plants.length; i++) {
+    //check if in plot
+    for (var x=0; x<plots.length; x++) {
+      if (
+        growing_plants[i].position.x == plots[x].position.x &&
+        growing_plants[i].position.y-10 == plots[x].position.y &&
+        growing_plants[i].position.z == plots[x].position.z
+      ) {
+        let plant_height = growing_plants[i].geometry.parameters.height;
+
+        if (plant_height <= 10) {
+          addHeight(growing_plants[i], 0.5);
+        }
+
+        if (plant_height > 10) {
+          growing_plants[i].material.color.setHex(0xb2b2b2);
+          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' decaying'
+        }
+        else if (plant_height > 8) {
+          growing_plants[i].material.color.setHex(0xc08bd6);
+          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' wilting'
+        }
+        else if (plant_height > 4) {
+          growing_plants[i].material.color.setHex(0xd30ad3);
+          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' ripe'
+        }
+        else if (plant_height > 2) {
+          growing_plants[i].material.color.setHex(0xf767d7);
+          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' blooming'
+        }
+        else if (plant_height > 1) {
+          growing_plants[i].material.color.setHex(0x4bc910);
+          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' seedling'
+        }
+        else {
+          growing_plants[i].material.color.setHex(0x7af442);
+          growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' sprout'
+        }
+
+        break
+      }
+    }
+  }
+
 }

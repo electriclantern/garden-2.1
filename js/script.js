@@ -181,16 +181,10 @@ function click() {
     // if () {} if obj_selected has a relationship with place
 
     //placement
-    if (!occupied) {
-      if (place != obj_selected && obj_selected != occupying_obj) {
-        obj_selected.position.set(place.position.x, place.position.y+10, place.position.z)
-      }
-      obj_selected = null;
-    } else {
-      if (place == obj_selected || obj_selected == occupying_obj) {
-        obj_selected = null;
-      }
+    if (!occupied && place != obj_selected && obj_selected != occupying_obj) {
+      obj_selected.position.set(place.position.x, place.position.y+10, place.position.z)
     }
+    obj_selected = null;
   }
 }
 

@@ -1,0 +1,12 @@
+top: new THREE.DirectionalLight(0xfff9bf, 1.0),
+front: new THREE.DirectionalLight(0xfff9bf, 0.8),
+back: new THREE.DirectionalLight(0xfff9bf, 0.4),
+left: new THREE.DirectionalLight(0xfff9bf, 0.6),
+right: new THREE.DirectionalLight(0xfff9bf, 0.6),
+
+night theme
+top: new THREE.DirectionalLight(0x3a6772, 1.0),
+front: new THREE.DirectionalLight(0x3a6772, 0.8),
+back: new THREE.DirectionalLight(0x3a6772, 0.4),
+left: new THREE.DirectionalLight(0x3a6772, 0.6),
+right: new THREE.DirectionalLight(0x3a6772, 0.6),

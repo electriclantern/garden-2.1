@@ -33,7 +33,6 @@ function init() {
   master = [];
 
   renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
-  //TODO: renderer.setPixelRatio(window.devicePixelRatio/1.5);
   renderer.setSize(container_width, container_height);
   container.appendChild(renderer.domElement);
 
@@ -50,11 +49,11 @@ function init() {
   controls.maxPolarAngle = Math.PI / 2;
 
   var light = {
-    top: new THREE.DirectionalLight(0xdee7f4, 1.0),
-    front: new THREE.DirectionalLight(0xdee7f4, 0.8),
-    back: new THREE.DirectionalLight(0xdee7f4, 0.4),
-    left: new THREE.DirectionalLight(0xdee7f4, 0.6),
-    right: new THREE.DirectionalLight(0xdee7f4, 0.6),
+    top: new THREE.DirectionalLight(0xfff9bf, 1.0),
+    front: new THREE.DirectionalLight(0xfff9bf, 0.8),
+    back: new THREE.DirectionalLight(0xfff9bf, 0.4),
+    left: new THREE.DirectionalLight(0xfff9bf, 0.6),
+    right: new THREE.DirectionalLight(0xfff9bf, 0.6),
   }
   scene.add(light.top);
   light.front.position.set(0, 0, 1);

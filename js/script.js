@@ -255,7 +255,7 @@ function click() {
       growing_plants = arrayRemove(growing_plants, obj_selected);
     }
     //seeds
-    if (obj_selected.name.split(' ')[2] == '+' && prev_place != place && place != obj_selected) {
+    if (obj_selected.name.split(' ')[2] == '+' && prev_place != place && place != obj_selected && place.name != 'plot') {
       obj_selected.name = arrayRemove(arrayRemove(obj_selected.name.split(' '), '+'), 'seed').toString().replace(',', ' ');
       create(obj_selected.name.split(' ')[0]+'_seed')
     }
@@ -268,7 +268,7 @@ function click() {
           growing_plants[i].position.x == obj_selected.position.x &&
           growing_plants[i].position.y == obj_selected.position.y+10 &&
           growing_plants[i].position.z == obj_selected.position.z
-) {
+        ) {
           mesh_above_obj = growing_plants[i]
         }
       }
@@ -342,8 +342,9 @@ function addHeight(mesh, y){
 }
 
 function grow() {
+
   for (var i=0; i<growing_plants.length; i++) {
-    let plant_height = growing_plants[i].geometry.parameters.height;
+    var plant_height = growing_plants[i].geometry.parameters.height;
 
     if (plant_height <= 10) {addHeight(growing_plants[i], 0.5)}
 

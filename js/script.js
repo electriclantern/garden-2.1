@@ -297,6 +297,7 @@ function create(object, x, y, z) {
   } else { obj = object }
 
   var geometry = object_recipes[obj].geometry;
+  if (obj == 'sprout') {var geometry = new THREE.BoxGeometry(10, 1, 10)}
   var creation = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial( { color: object_recipes[obj].color, vertexColors: THREE.FaceColors, wireframe: false} ));
   if ('topcolor' in object_recipes[obj]) {
     creation.geometry.faces[5].color.setHex( object_recipes[obj].topcolor );

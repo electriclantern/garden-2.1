@@ -6,7 +6,7 @@
 
 a game about inventing potions, trading with the townspeople and travelers, and exploring the old mystery behind Mt. Santerosia.
 
-inspired by adarkroom/Candybox and games like Stardew Valley, this is a javascript game about gardening, brewing potions, and exploring the world :D it's made on the three.js framework and my first venture into Webgl. (i'm no pro coder though. it's really messy.)
+inspired by adarkroom/Candybox and games like Stardew Valley, this is a javascript game about gardening, brewing potions, and exploring the world :D it's made on the three.js framework and my first venture into Webgl.
 
 my goal is to make something meditative and relaxing, and interesting to mess around with.
 

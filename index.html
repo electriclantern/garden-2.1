@@ -7,7 +7,14 @@
     <link rel="stylesheet" href="style.css">
 	</head>
 	<body>
-    <div id="container">
+		<div id="intro" onclick="begin_game()">
+			your mother, a famous potionmaster, passed away as she was developing a cure for her ailment.
+			<br /><br />
+			you enter her brewshop. everything is gone except for one seed.
+			<br /><br />
+			<div style="text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%)">click to begin.</div>
+		</div>
+    <div id="container" style="display:none">
 			<div id="tag">scroll to zoom, right click to rotate. left click to select.</div>
 			<div id="tooltip"></div>
 		</div>
@@ -15,5 +22,6 @@
 		<script src="js/three.js"></script>
 		<script src="js/OrbitControls.js"></script>
 		<script src="js/script.js"></script>
+		<script src="js/setup.js"></script>
 	</body>
 </html>

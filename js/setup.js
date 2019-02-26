@@ -69,6 +69,16 @@ var spawner;
 container.onmousemove = move;
 container.onclick = click;
 
+set_intro();
+
+function set_intro() {
+  var intro = document.getElementById('intro');
+
+  intro.innerHTML = "your mother, a famous potionmaster, passed away as she was developing a cure for her ailment.<br /><br />you enter her brewshop. the place is barren. most of her things are gone.";
+
+  intro.innerHTML += "<div style='text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%)'>click to begin.</div>"
+}
+
 function begin_game() {
   document.getElementById('container').style.display = 'block'; document.getElementById('intro').style.display = 'none';
 

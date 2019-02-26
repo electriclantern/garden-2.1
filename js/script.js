@@ -14,15 +14,15 @@ function grow() {
       growing_plants[i].material.color.setHex(0xc08bd6);
       growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' wilting'
     }
-    else if (plant_height > 4) {
+    else if (plant_height > 5) {
       growing_plants[i].material.color.setHex(0xd30ad3);
       growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' ripe + seed'
     }
-    else if (plant_height > 2) {
+    else if (plant_height > 3) {
       growing_plants[i].material.color.setHex(0xf767d7);
       growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' blooming'
     }
-    else if (plant_height > 1) {
+    else if (plant_height > 2) {
       growing_plants[i].material.color.setHex(0x4bc910);
       growing_plants[i].name = growing_plants[i].name.split(' ')[0]+' seedling'
     }

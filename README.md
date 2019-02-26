@@ -4,7 +4,7 @@
 
 > you enter her brewshop. the place is barren. most of her things are gone.
 
-a game about inventing potions, trading with the townspeople and travelers, and exploring the old mystery behind Mt. Santerosia.
+a game about inventing potions and trading with the townspeople and travelers.
 
 inspired by adarkroom/Candybox and games like Stardew Valley, this is a javascript game about gardening, brewing potions, and exploring the world :D it's made on the three.js framework and my first venture into Webgl.
 

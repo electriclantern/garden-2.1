@@ -166,12 +166,21 @@ function init() {
     static.push(wall);
     x++;
   }
-  var wall_geometry = new THREE.CubeGeometry(10, 30, 10);
+  var wall_geometry = new THREE.CubeGeometry(10, 20, 10);
   for (var i=0, x=1; i<4; i++) {
     wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
-    wall.position.set(40 - 10*x, 10, -50);
+    wall.position.set(40 - 10*x, 5, -50);
     scene.add(wall);
     static.push(wall);
+    x++;
+  }
+  var wall_geometry = new THREE.CubeGeometry(10, 10, 10);
+  for (var i=0, x=1; i<4; i++) {
+    wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+    wall.position.set(40 - 10*x, 20, -50);
+    scene.add(wall);
+    static.push(wall);
+    master.push(wall);
     x++;
   }
   var wall_geometry = new THREE.CubeGeometry(10, 20, 10);
@@ -215,7 +224,6 @@ function init() {
   light_switch.name = 'light switch'
   scene.add(light_switch);
   interactable.push(light_switch);
-  master.push(light_switch);
 
   //drawing
   for (var i=0; i<3; i++) {

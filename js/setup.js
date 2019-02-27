@@ -205,7 +205,7 @@ function init() {
   var spawner_geometry = new THREE.CubeGeometry(10, 10, 10);
   spawner = new THREE.Mesh(spawner_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424}));
   spawner.position.set(-10, 20, -50);
-  spawner.name = 'spawner/disposal';
+  spawner.name = 'spawner';
   scene.add(spawner);
   master.push(spawner);
 
@@ -328,7 +328,7 @@ function click() {
     }
 
     //relationships
-    if (place.name == 'spawner/disposal') {
+    if (place.name == 'disposal') {
       if (removable.includes(obj_selected.name.split(' ')[1])) {
         removeObject(obj_selected);
       }

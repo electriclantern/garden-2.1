@@ -1,4 +1,5 @@
-var camera, controls, scene, renderer, container = document.getElementById('container'), raycaster, mouse;
+var camera, controls, scene, renderer, container = document.getElementById('container'), raycaster, mouse, spawner, lights_on = true;
+var static, master, INTERSECTED, obj_selected, interactable, prev_place;
 var object_recipes = {
   plot: {
     geometry: new THREE.BoxGeometry(10, 10, 10),
@@ -63,11 +64,16 @@ var element_properties = {
 };
 var removable = ['sprout', 'seedling', 'blooming', 'ripe', 'wilting', 'decaying'];
 var growing_plants = [];
-var static, master, INTERSECTED, obj_selected, interactable, prev_place;
 var tooltip = document.getElementById('tooltip');
-var spawner;
-container.onmousemove = move;
-container.onclick = click;
+var light = {
+  top: new THREE.DirectionalLight(0x3a6772, 1.0),
+  front: new THREE.DirectionalLight(0x3a6772, 0.8),
+  back: new THREE.DirectionalLight(0x3a6772, 0.4),
+  left: new THREE.DirectionalLight(0x3a6772, 0.6),
+  right: new THREE.DirectionalLight(0x3a6772, 0.6),
+  bottom: new THREE.DirectionalLight(0x3a6772, 0.2),
+  ambient: new THREE.AmbientLight(0x3a6772, 0.2)
+};
 
 set_intro();
 
@@ -81,6 +87,9 @@ function set_intro() {
 
 function begin_game() {
   document.getElementById('container').style.display = 'block'; document.getElementById('intro').style.display = 'none';
+
+  container.onmousemove = move;
+  container.onclick = click;
 
   init();
   animate();
@@ -102,24 +111,6 @@ function init() {
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
-  camera = new THREE.PerspectiveCamera(45, container_width / container_height, 1, 1000);
-  camera.position.z = 250;
-
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.screenSpacePanning = false;
-  controls.minDistance = 100;
-  controls.maxDistance = 700;
-  controls.maxPolarAngle = Math.PI / 2;
-
-  var light = {
-    top: new THREE.DirectionalLight(0xfff9bf, 0.8),
-    front: new THREE.DirectionalLight(0xfff9bf, 0.6),
-    back: new THREE.DirectionalLight(0xfff9bf, 0.2),
-    left: new THREE.DirectionalLight(0xfff9bf, 0.4),
-    right: new THREE.DirectionalLight(0xfff9bf, 0.4),
-    bottom: new THREE.DirectionalLight(0xfff9bf, 0.2),
-    ambient: new THREE.AmbientLight(0xfff9bf, 0.2),
-  }
   scene.add(light.top);
   light.front.position.set(0, 0, 1);
   scene.add(light.front);
@@ -132,6 +123,16 @@ function init() {
   scene.add(light.ambient);
   light.bottom.position.set(0, -1, 0);
   scene.add(light.bottom);
+  toggleLights();
+
+  camera = new THREE.PerspectiveCamera(45, container_width / container_height, 1, 1000);
+  camera.position.z = 250;
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.screenSpacePanning = false;
+  controls.minDistance = 100;
+  controls.maxDistance = 700;
+  controls.maxPolarAngle = Math.PI / 2;
 
   //isometric
   controls.startingRotation(45 * Math.PI / 180, 25 * Math.PI / 180);
@@ -152,6 +153,38 @@ function init() {
     z++;
   }
 
+  //wall
+  var wall_geometry = new THREE.CubeGeometry(10, 60, 10);
+  wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+  wall.position.set(40, 25, -50);
+  scene.add(wall);
+  static.push(wall);
+  for (var i=0, x=6; i<3; i++) {
+    wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+    wall.position.set(40 - 10*x, 25, -50);
+    scene.add(wall);
+    static.push(wall);
+    x++;
+  }
+  var wall_geometry = new THREE.CubeGeometry(10, 30, 10);
+  for (var i=0, x=1; i<4; i++) {
+    wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+    wall.position.set(40 - 10*x, 10, -50);
+    scene.add(wall);
+    static.push(wall);
+    x++;
+  }
+  var wall_geometry = new THREE.CubeGeometry(10, 20, 10);
+  wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+  wall.position.set(-10, 5, -50);
+  scene.add(wall);
+  static.push(wall);
+  var wall_geometry = new THREE.CubeGeometry(50, 10, 10);
+  wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+  wall.position.set(10, 50, -50);
+  scene.add(wall);
+  static.push(wall);
+
   var brewer_geometry = new THREE.CylinderGeometry(5, 5, 10, 6);
   var brewer = new THREE.Mesh(brewer_geometry, new THREE.MeshLambertMaterial( {color: 0xe85c5c} ));
   brewer.position.set(40, 10, -10);
@@ -169,17 +202,24 @@ function init() {
   interactable.push(bottle_button);
   master.push(bottle_button);
 
-  var spawner_geometry = new THREE.CubeGeometry(10, 3, 10);
-  spawner = new THREE.Mesh(spawner_geometry, new THREE.MeshLambertMaterial( {color: 0xffffff}));
-  spawner.position.set(40, 10, 40);
+  var spawner_geometry = new THREE.CubeGeometry(10, 10, 10);
+  spawner = new THREE.Mesh(spawner_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424}));
+  spawner.position.set(-10, 20, -50);
   spawner.name = 'spawner/disposal';
   scene.add(spawner);
-  interactable.push(spawner);
   master.push(spawner);
+
+  var light_switch_geometry = new THREE.CubeGeometry(4, 6, 1);
+  light_switch = new THREE.Mesh(light_switch_geometry, new THREE.MeshLambertMaterial( {color: 0xffffff}));
+  light_switch.position.set(-30, 30, -45);
+  light_switch.name = 'light switch'
+  scene.add(light_switch);
+  interactable.push(light_switch);
+  master.push(light_switch);
 
   //drawing
   for (var i=0; i<3; i++) {
-    create('plot', 0, 10, (10*i) + -40);
+    create('plot', 40, 10, (10*i) + -40);
   }
   create('mercury_seed');
 }
@@ -241,15 +281,14 @@ function move(e) {
   mouse.y = - ( (event.clientY - rect.top) / rect.height) * 2 + 1;
 }
 function click() {
-  if (!obj_selected) {
-    if (INTERSECTED != null) {
+  if (!obj_selected && INTERSECTED != null) {
+
+    if (INTERSECTED.name.split(' ')[1] == 'spawner') {
+      create(INTERSECTED.name.split(' ')[0]);
+    } else if (INTERSECTED.name == 'light switch') {
+      toggleLights();
+    } else {
       obj_selected = INTERSECTED;
-
-      if (obj_selected.name.split(' ')[1] == 'spawner') {
-        create(obj_selected.name.split(' ')[0]);
-
-        obj_selected = null;
-      }
 
       //harvesting
       if (growing_plants.includes(obj_selected.name.split(' ')[1])) {
@@ -267,9 +306,10 @@ function click() {
           break
         }
       }
-
     }
-  } else {
+
+  }
+  else if (INTERSECTED != null) {
     var place = INTERSECTED;
     var occupying_obj = null;
     var occupied = false, mesh_above_obj = null, plant_above_obj = null;
@@ -305,7 +345,7 @@ function click() {
     }
 
     //harvesting
-    if (removable.includes(obj_selected.name.split(' ')[1])) {
+    if (removable.includes(obj_selected.name.split(' ')[1]) && obj_selected != place && place.name != 'plot') {
       growing_plants = arrayRemove(growing_plants, obj_selected);
     }
     //seeds
@@ -323,7 +363,7 @@ function click() {
           getCenterPoint(growing_plants[i]).z == getCenterPoint(obj_selected).z &&
           getCenterPoint(growing_plants[i]).y == getCenterPoint(obj_selected).y+10
         ) {
-          mesh_above_obj = growing_plants[i]
+          mesh_above_obj = growing_plants[i];
         }
       }
     }
@@ -333,17 +373,22 @@ function click() {
       placeOn(obj_selected, place);
 
       if (mesh_above_obj) {
+        console.log(obj_selected.position)
         placeOn(mesh_above_obj, obj_selected);
       }
     }
+
     obj_selected = null;
+  }
+  else {
+    obj_selected = null
   }
 }
 
 function create(object, x, y, z) {
-  var x = x || spawner.position.x;
-  var y = y || spawner.position.y+10;
-  var z = z || spawner.position.z;
+  if (!x) {x = spawner.position.x}
+  if (!y) {y = spawner.position.y+10}
+  if (!z) {z = spawner.position.z}
   var obj;
 
   if (object.includes('_')) {
@@ -402,6 +447,30 @@ function getCenterPoint(mesh) {
     mesh.localToWorld( center );
     return center;
 }
-function placeOn(mesh, place) {
-  mesh.position.set(getCenterPoint(place).x, getCenterPoint(place).y+10, getCenterPoint(place).z);
+function placeOn(mesh, p) {
+  mesh.position.set(getCenterPoint(p).x, getCenterPoint(p).y+10, getCenterPoint(p).z);
+}
+
+function toggleLights() {
+  if (!lights_on) {
+    lights(0xfff9bf);
+    document.body.style.backgroundColor = 'var(--lights-on)';
+    document.body.style.color = 'var(--lights-off)';
+    lights_on = true;
+  } else {
+    lights(0x3a6772);
+    document.body.style.backgroundColor = 'var(--lights-off)';
+    document.body.style.color = 'var(--lights-on)';
+    lights_on = false;
+  }
+
+  function lights(color) {
+    light.top.color.setHex( color );
+    light.front.color.setHex( color );
+    light.back.color.setHex( color );
+    light.left.color.setHex( color );
+    light.right.color.setHex( color );
+    light.bottom.color.setHex( color );
+    light.ambient.color.setHex( color );
+  }
 }

@@ -1,6 +1,11 @@
+html {
+  --lights-on: #f7f9f8;
+  --lights-off: #0a0c0c;
+}
+
 body {
   margin: 0;
-  background-color: #f7f9f8;
+  background-color: var(--lights-on);
 }
 canvas { width: 100%; height: 100% }
 

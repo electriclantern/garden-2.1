@@ -154,45 +154,45 @@ function init() {
   }
 
   //wall
-  var wall_geometry = new THREE.CubeGeometry(10, 60, 10);
-  wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
-  wall.position.set(40, 25, -50);
-  scene.add(wall);
-  static.push(wall);
-  for (var i=0, x=6; i<3; i++) {
-    wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
-    wall.position.set(40 - 10*x, 25, -50);
-    scene.add(wall);
-    static.push(wall);
-    x++;
-  }
-  var wall_geometry = new THREE.CubeGeometry(10, 20, 10);
-  for (var i=0, x=1; i<4; i++) {
-    wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
-    wall.position.set(40 - 10*x, 5, -50);
-    scene.add(wall);
-    static.push(wall);
-    x++;
-  }
   var wall_geometry = new THREE.CubeGeometry(10, 10, 10);
-  for (var i=0, x=1; i<4; i++) {
+  for (var i=0, x=0, y=0; i<23; i++) {
     wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
-    wall.position.set(40 - 10*x, 20, -50);
+    wall.position.set(40 - 10*x, 0 + 10*y, -50);
+    x++;
+    if (wall.position.x < -30) {
+      y++;
+      x = 0;
+    }
     scene.add(wall);
     static.push(wall);
     master.push(wall);
-    x++;
   }
-  var wall_geometry = new THREE.CubeGeometry(10, 20, 10);
-  wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
-  wall.position.set(-10, 5, -50);
-  scene.add(wall);
-  static.push(wall);
-  var wall_geometry = new THREE.CubeGeometry(50, 10, 10);
-  wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
-  wall.position.set(10, 50, -50);
-  scene.add(wall);
-  static.push(wall);
+  for (var t=0; t<3; t++) {
+    for (var i=0, x=6, y=2+t; i<4; i++) {
+      wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+      wall.position.set(40 - 10*x, 0 + 10*y, -50);
+      x++;
+      if (wall.position.x < -30) {
+        y++;
+        x = 0;
+      }
+      scene.add(wall);
+      static.push(wall);
+      master.push(wall);
+    }
+  }
+  for (var i=0, x=1, y=5; i<8; i++) {
+    wall = new THREE.Mesh(wall_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424} ));
+    wall.position.set(40 - 10*x, 0 + 10*y, -50);
+    x++;
+    if (wall.position.x < -30) {
+      y++;
+      x = 0;
+    }
+    scene.add(wall);
+    static.push(wall);
+    master.push(wall);
+  }
 
   var brewer_geometry = new THREE.CylinderGeometry(5, 5, 10, 6);
   var brewer = new THREE.Mesh(brewer_geometry, new THREE.MeshLambertMaterial( {color: 0xe85c5c} ));
@@ -209,7 +209,6 @@ function init() {
   bottle_button.rotation.x = 90 * Math.PI / 2;
   scene.add(bottle_button);
   interactable.push(bottle_button);
-  master.push(bottle_button);
 
   var spawner_geometry = new THREE.CubeGeometry(10, 10, 10);
   spawner = new THREE.Mesh(spawner_geometry, new THREE.MeshLambertMaterial( {color: 0x8c5424}));
